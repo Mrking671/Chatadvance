@@ -22,7 +22,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     # Check if verification is required
     if last_verify_time and (current_time - last_verify_time).seconds < 3600:
-        await update.message.reply_text("Please verify to continue.")
+        await update.message.reply_text("You have already verified. You can now use the bot.")
         return
 
     # Send verification message with button
@@ -38,7 +38,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
     current_time = datetime.datetime.now()
 
     # Check if verification is required
-    if last_verify_time and (current_time - last_verify_time).seconds < 3600:
+    if not last_verify_time or (current_time - last_verify_time).seconds >= 3600:
         await update.message.reply_text("Please verify to continue.")
         return
 
