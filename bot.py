@@ -1,7 +1,7 @@
 import os
 import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, filters
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -12,7 +12,7 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 BLOGSPOT_URL = os.getenv('BLOGSPOT_URL')
 
 # Initialize Updater and Dispatcher
-updater = Updater(token=TELEGRAM_TOKEN)
+updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
 dp = updater.dispatcher
 
 # Define handlers and commands
@@ -54,7 +54,7 @@ def verify(update: Update, context: CallbackContext) -> None:
 # Add handlers to dispatcher
 dp.add_handler(CommandHandler('start', start))
 dp.add_handler(CommandHandler('verify', verify))
-dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
 # Start polling for updates
 updater.start_polling()
