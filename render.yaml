@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: telegram-bot
+    env: python
+    plan: free
+    build:
+      type: docker
+    dockerfile: Dockerfile
+    start_command: python bot.py
+    env_vars:
+      TELEGRAM_TOKEN: "7258041551:AAF81cY7a2kV72OUJLV3rMybTSJrj0Fm-fc"
+      BLOGSPOT_URL: "https://chatgptgiminiai.blogspot.com/2024/08/verification-page-please-wait-for-30_22.html"
