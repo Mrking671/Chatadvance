@@ -30,16 +30,16 @@ async def start(update: Update, context: CallbackContext) -> None:
         InlineKeyboardButton("Verify", url=BLOGSPOT_URL)
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Click the button below to verify.", reply_markup=reply_markup)
+    await update.message.reply_text("Click the button below to verify. After verification, you can use the bot.", reply_markup=reply_markup)
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_chat.id
     last_verify_time = context.chat_data.get('last_verify_time')
     current_time = datetime.datetime.now()
 
-    # Check if verification is required
+    # Check if the user is verified
     if not last_verify_time or (current_time - last_verify_time).seconds >= 3600:
-        await update.message.reply_text("Please verify to continue.")
+        await update.message.reply_text("Please verify to continue using the bot. Use /start to get the verification link.")
         return
 
     # Send a response
