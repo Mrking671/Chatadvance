@@ -1,5 +1,6 @@
 import os
 import datetime
+from pymongo import MongoClient
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
 from dotenv import load_dotenv
@@ -10,6 +11,12 @@ load_dotenv()
 # Read environment variables
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 BLOGSPOT_URL = os.getenv('BLOGSPOT_URL')
+MONGO_URI = os.getenv('MONGO_URI')
+
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client['bot_database']
+users_collection = db['users']
 
 # Initialize Application
 app = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -17,13 +24,16 @@ app = Application.builder().token(TELEGRAM_TOKEN).build()
 # Define handlers and commands
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_chat.id
-    last_verify_time = context.chat_data.get('last_verify_time')
+    user = users_collection.find_one({'_id': user_id})
+    
     current_time = datetime.datetime.now()
-
-    # Check if verification is required
-    if last_verify_time and (current_time - last_verify_time).seconds < 3600:
-        await update.message.reply_text("You have already verified. You can now use the bot.")
-        return
+    if user:
+        last_verify_time = user.get('last_verify_time')
+        if last_verify_time:
+            last_verify_time = datetime.datetime.fromisoformat(last_verify_time)
+            if (current_time - last_verify_time).seconds < 3600:
+                await update.message.reply_text("You have already verified. You can now use the bot.")
+                return
 
     # Send verification message with button
     keyboard = [[
@@ -34,20 +44,33 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_chat.id
-    last_verify_time = context.chat_data.get('last_verify_time')
+    user = users_collection.find_one({'_id': user_id})
+    
     current_time = datetime.datetime.now()
-
-    # Check if the user is verified
-    if not last_verify_time or (current_time - last_verify_time).seconds >= 3600:
+    if not user:
         await update.message.reply_text("Please verify to continue using the bot. Use /start to get the verification link.")
         return
+    
+    last_verify_time = user.get('last_verify_time')
+    if last_verify_time:
+        last_verify_time = datetime.datetime.fromisoformat(last_verify_time)
+        if (current_time - last_verify_time).seconds >= 3600:
+            await update.message.reply_text("Please verify to continue using the bot. Use /start to get the verification link.")
+            return
 
     # Send a response
     await update.message.reply_text("This is a response from the bot.")
 
 async def verify(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_chat.id
-    context.chat_data['last_verify_time'] = datetime.datetime.now()
+    current_time = datetime.datetime.now().isoformat()
+    
+    users_collection.update_one(
+        {'_id': user_id},
+        {'$set': {'last_verify_time': current_time}},
+        upsert=True
+    )
+    
     await update.message.reply_text("Verification successful! You can now use the bot.")
 
 # Add handlers to application
